@@ -40,8 +40,8 @@ void portInit(void){
 void adcInit(void){
 	/* 
 		ADC = (Vin*1024)/Vref 
-		Vin = (ADC*Vref)/1024
 		Vref = 2.56V
+		LM35temp = 0.25*ADC+2 (temp is 10mV/degC, range 2-150degC)
 	*/
 }
 
