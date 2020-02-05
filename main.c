@@ -41,6 +41,9 @@ int main(void)
     portInit();
 	adcInit();
     
+	segment0_off();
+	segment1_off();
+	
     while (1) 
     {
     }
@@ -93,7 +96,29 @@ uint16_t covertAdcToTemp(uint16_t adc) {
 	return (0.25*adc + 2);
 }
 
+void display(uint16_t number) {
+	PORTB |= (number & 0x0F);
+}
 
+void displayTemperature(uint16_t temperature) {
+	
+	if (temperature < 0) {return;}
+	if (temperature < 10) {
+		segment1_off();
+		segment0_on()
+		display(temperature);
+		return;
+	} 
+	
+	if (temperature > 99) {temperature = 99;}
+	
+	segment1_off()	
+	segment0_on();
+	display(temperature%10);
+	segment0_off();
+	segment1_on();
+	display(temperature/10);	
+}
 
 
 void timerInit(void){
