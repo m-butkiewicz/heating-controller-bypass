@@ -5,6 +5,18 @@
 
 #include <avr/io.h>
 
+#define TEMP PA0 /* input */
+#define CHCK PA7 /* input */
+#define SEG0 PA1
+#define SEG1 PA2
+#define REL PA5
+#define LED3 PB6 /* BLUE - pump work detected */
+#define LED2 PB5 /* RED - c.h. controller not working */
+#define BCD_A PB0
+#define BCD_B PB1
+#define BCD_C PB2
+#define BCD_D PB3
+
 /* add 8MHz clock */
 
 void portInit(void);
@@ -22,19 +34,12 @@ int main(void)
 }
 
 void portInit(void){
-	/*
-		PB4 - 7seg T1 Switch
-		PB5 - 7seg T2 Switch
-		PA7 - BCD-D
-		PA6 - BCD-C
-		PA5 - BCD-B
-		PA4 - BCD-A
-		PA0 - ADC0 (input)
-	*/
-	PORTB = (1<<PB5) | (1<<PB4);
-	DDRB = (1<<DDB5) | (1<<DDB4);
-	PORTA = (0<<PA7) | (0<<PA6) | (0<<PA5) | (0<<PA4);
-	DDRA = (1<<PA7) | (1<<PA6) | (1<<PA5) | (1<<PA4) | (0<<PA0);
+
+	PORTA = (1<<SEG0) | (1<<SEG1) | (1<<REL);
+	DDRA =  (0<<TEMP) | (0<<CHCK) | (1<<SEG0) | (1<<SEG1) | (1<<REL);
+	
+	PORTB = (1<<LED3) | (1<<LED2) | (0<<BCD_D) | (0<<BCD_C) | (0<<BCD_B) | (0<<BCD_A);
+	DDRB = (1<<LED3) | (1<<LED2) | (1<<BCD_D) | (1<<BCD_C) | (1<<BCD_B) | (1<<BCD_A);
 }
 
 void adcInit(void){
