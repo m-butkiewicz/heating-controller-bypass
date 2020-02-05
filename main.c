@@ -8,7 +8,6 @@
 
 #include <avr/io.h>
 
-#define TEMP PA0 /* input */
 #define CHCK PA7 /* input */
 #define SEG0 PA1
 #define SEG1 PA2
@@ -21,6 +20,7 @@
 #define BCD_D PB3
 
 #define TIMER_OVF_FACTOR 6
+#define PUMP_START_TEMPERATURE 35 /* Hard-coded for now */
 
 void portInit(void);
 void adcInit(void);
@@ -36,9 +36,15 @@ void led3Blue_on(void);
 void led3Blue_off(void);
 void led2Red_on(void);
 void led2Red_off(void);
+uint8_t pumpIsWorking(void);
 
-int counter = 0;
-int timerLock = 0;
+uint16_t adcRead(void);
+uint16_t readTemperature(void);
+void display(uint16_t number);
+void displayTemperature(uint16_t temperature);
+
+uint8_t counter = 0;
+uint8_t timerLock = 0;
 
 ISR (TIMER1_OVF_vect) {
 	counter++;
@@ -51,6 +57,7 @@ ISR (TIMER1_OVF_vect) {
 int main(void)
 {
 	uint16_t temperature = 0;
+	uint8_t pumpWorkCheck = 0;
 	
     portInit();
 	adcInit();
@@ -63,6 +70,22 @@ int main(void)
     {
 		if (timerLock) {
 			timerLock = 0;
+			temperature = readTemperature();
+			
+			if ((temperature >= PUMP_START_TEMPERATURE) && pumpIsWorking()) {
+				led3Blue_on();
+			}
+			else if (temperature >= PUMP_START_TEMPERATURE) && !pumpIsWorking() {
+				relay_on();
+				led3Blue_on();
+				led2Red_on();
+			}
+			
+			if (temperature <= PUMP_START_TEMPERATURE-3) {
+				relay_off();
+				led3Blue_off();
+				led2Red_off();
+			}
 		}
 		displayTemperature(temperature);
     }
@@ -71,7 +94,7 @@ int main(void)
 void portInit(void){
 
 	PORTA = (1<<SEG0) | (1<<SEG1) | (1<<REL);
-	DDRA =  (0<<TEMP) | (0<<CHCK) | (1<<SEG0) | (1<<SEG1) | (1<<REL);
+	DDRA =  (0<<CHCK) | (1<<SEG0) | (1<<SEG1) | (1<<REL);
 	
 	PORTB = (1<<LED3_BLUE) | (1<<LED2_RED) | (0<<BCD_D) | (0<<BCD_C) | (0<<BCD_B) | (0<<BCD_A);
 	DDRB = (1<<LED3_BLUE) | (1<<LED2_RED) | (1<<BCD_D) | (1<<BCD_C) | (1<<BCD_B) | (1<<BCD_A);
@@ -98,21 +121,33 @@ void adcInit(void){
 	
 }
 
+void timerInit(void){
+	
+	/* overflow every 522ms */
+	TIMSK |= (1<<TOIE1);
+	sei();
+	TCCR1B |= (1<<CS13) | (1<<CS12) | (1<<CS11) | (1<<CS10);
+}
+
 uint16_t adcRead(void) {
 	
 	ADCSR |= (1<<ADSC);
-	while (ADCSR & (1<ADSC));
+	while (ADCSR & (1<ADSC)) {};
 	return (ADC);
 }
 
-uint16_t covertAdcToTemp(uint16_t adc) {
+uint16_t readTemperature(void) {
 	
 	/* 
 		ADC = (Vin*1024)/Vref 
 		Vref = 2.56V
 		LM35temp = 0.25*ADC+2 (temp is 10mV/degC, range 2-150degC)
 	*/
-	return (0.25*adc + 2);
+	return (0.25*adcRead() + 2);
+}
+
+uint8_t pumpIsWorking(void) {
+	return (PINA & (1<<CHCK));
 }
 
 void display(uint16_t number) {
@@ -140,10 +175,4 @@ void displayTemperature(uint16_t temperature) {
 }
 
 
-void timerInit(void){
-	
-	/* refresh time - 3s */
-	TIMSK |= (1<<TOIE1);
-	sei();
-	TCCR1B |= (1<<CS13) | (1<<CS12) | (1<<CS11) | (1<<CS10); 
-}
+
