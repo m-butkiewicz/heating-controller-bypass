@@ -45,7 +45,6 @@ void displayTemperature(uint16_t temperature);
 
 uint8_t counter = 0;
 uint8_t timerLock = 0;
-
 ISR (TIMER1_OVF_vect) {
 	counter++;
 	if (counter == TIMER_OVF_FACTOR) {
@@ -54,23 +53,56 @@ ISR (TIMER1_OVF_vect) {
 	}
 }
 
+uint16_t temperature = 0;
+uint8_t isEven = 0;
+
+ISR (TIMER0_OVF_vect) {
+	
+	cli();
+	if (temperature < 10) {
+		segment1_off();
+		display(temperature);
+		segment0_on();
+		return;
+	}
+	
+	if (isEven) {
+		isEven = 0;
+		segment1_off();
+		display(temperature%10);
+		segment0_on();
+	}
+	else {
+		isEven = 1;
+		segment0_off();
+		display(temperature/10);
+		segment1_on();
+	}
+	
+	sei();
+}
+
 int main(void)
 {
-	uint16_t temperature = 0;
+	
 	uint8_t pumpWorkCheck = 0;
 	
     portInit();
 	adcInit();
 	timerInit();
     
-	segment0_off();
+	segment0_on();
 	segment1_off();
 	
     while (1) 
     {
 		if (timerLock) {
+			
+			cli();
 			timerLock = 0;
 			temperature = readTemperature();
+			if (temperature < 0) {temperature = 0;}
+			if (temperature > 99) {temperature = 99;}
 			
 			if ((temperature >= PUMP_START_TEMPERATURE) && pumpIsWorking()) {
 				led3Blue_on();
@@ -86,8 +118,8 @@ int main(void)
 				led3Blue_off();
 				led2Red_off();
 			}
+			sei();
 		}
-		displayTemperature(temperature);
     }
 }
 
@@ -123,10 +155,12 @@ void adcInit(void){
 
 void timerInit(void){
 	
-	/* overflow every 522ms */
-	TIMSK |= (1<<TOIE1);
+	/* Overflow of Timer1 every 522ms */
+	/* Overflow of Timer0 every  32ms */
+	TIMSK |= (1<<TOIE1) | (1<<TOIE0);
 	sei();
-	TCCR1B |= (1<<CS13) | (1<<CS12) | (1<<CS11) | (1<<CS10);
+	TCCR1B = (1<<CS13) | (1<<CS12) | (1<<CS11) | (1<<CS10);
+	TCCR0 = (1<<CS02) | (1<<CS00);
 }
 
 uint16_t adcRead(void) {
@@ -153,26 +187,3 @@ uint8_t pumpIsWorking(void) {
 void display(uint16_t number) {
 	PORTB |= (number & 0x0F);
 }
-
-void displayTemperature(uint16_t temperature) {
-	
-	if (temperature < 0) {return;}
-	if (temperature < 10) {
-		segment1_off();
-		segment0_on()
-		display(temperature);
-		return;
-	} 
-	
-	if (temperature > 99) {temperature = 99;}
-	
-	segment1_off()	
-	segment0_on();
-	display(temperature%10);
-	segment0_off();
-	segment1_on();
-	display(temperature/10);	
-}
-
-
-
