@@ -20,6 +20,8 @@
 #define BCD_C PB2
 #define BCD_D PB3
 
+#define TIMER_OVF_FACTOR 6
+
 void portInit(void);
 void adcInit(void);
 void timerInit(void);
@@ -35,17 +37,34 @@ void led3Blue_off(void);
 void led2Red_on(void);
 void led2Red_off(void);
 
+int counter = 0;
+int timerLock = 0;
+
+ISR (TIMER1_OVF_vect) {
+	counter++;
+	if (counter == TIMER_OVF_FACTOR) {
+		counter = 0;
+		timerLock = 1;
+	}
+}
 
 int main(void)
 {
+	uint16_t temperature = 0;
+	
     portInit();
 	adcInit();
+	timerInit();
     
 	segment0_off();
 	segment1_off();
 	
     while (1) 
     {
+		if (timerLock) {
+			timerLock = 0;
+		}
+		displayTemperature(temperature);
     }
 }
 
@@ -122,6 +141,9 @@ void displayTemperature(uint16_t temperature) {
 
 
 void timerInit(void){
-	/* 7seg toggle time - 50ms */
+	
 	/* refresh time - 3s */
+	TIMSK |= (1<<TOIE1);
+	sei();
+	TCCR1B |= (1<<CS13) | (1<<CS12) | (1<<CS11) | (1<<CS10); 
 }
