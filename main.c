@@ -51,7 +51,20 @@ void adcInit(void){
 		Vref = 2.56V
 		LM35temp = 0.25*ADC+2 (temp is 10mV/degC, range 2-150degC)
 	*/
+	/* Internal 2.56V AREF with external cap */
+	ADMUX = (1<<REFS1) | (1<<REFS0);
+	/* Prescaler F_CPU/64 (125kHz) */
+	ADCSR = (1<<ADPS2) | (1<<ADPS1);
+	ADCSR |= (1<<ADEN);
+	
 }
+
+uint16_t adcRead(void) {
+	ADCSR |= (1<<ADSC);
+	while (ADCSR & (1<ADSC));
+	return (ADC);
+}
+
 
 void timerInit(void){
 	/* 7seg toggle time - 50ms */
