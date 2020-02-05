@@ -30,6 +30,7 @@ void timerInit(void);
 int main(void)
 {
     portInit();
+	adcInit();
     
     while (1) 
     {
@@ -46,11 +47,7 @@ void portInit(void){
 }
 
 void adcInit(void){
-	/* 
-		ADC = (Vin*1024)/Vref 
-		Vref = 2.56V
-		LM35temp = 0.25*ADC+2 (temp is 10mV/degC, range 2-150degC)
-	*/
+	
 	/* Internal 2.56V AREF with external cap */
 	ADMUX = (1<<REFS1) | (1<<REFS0);
 	/* Prescaler F_CPU/64 (125kHz) */
@@ -60,11 +57,21 @@ void adcInit(void){
 }
 
 uint16_t adcRead(void) {
+	
 	ADCSR |= (1<<ADSC);
 	while (ADCSR & (1<ADSC));
 	return (ADC);
 }
 
+uint16_t covertAdcToTemp(uint16_t adc) {
+	
+	/* 
+		ADC = (Vin*1024)/Vref 
+		Vref = 2.56V
+		LM35temp = 0.25*ADC+2 (temp is 10mV/degC, range 2-150degC)
+	*/
+	return (0.25*adc + 2);
+}
 
 void timerInit(void){
 	/* 7seg toggle time - 50ms */
