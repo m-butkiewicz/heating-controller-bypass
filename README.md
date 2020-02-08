@@ -10,11 +10,14 @@ Wykonany układ posiada oddzielny czujnik ([LM35][lm]) mierzący temperaturę wo
 
 ## Obsługa i dodatkowe uwagi
 
-Układ działa automatycznie po poprawnym podłączeniu.
+Układ działa automatycznie po poprawnym podłączeniu. Aktualną temperaturę można odczytać 7-segmentowego wyświetlacza LED. Na obudowie znajdują się dodatkowe diody LED sygnalizujące obecność zasilania, pracę sterownika, pracę układu oraz wystąpienie awaryjnego załączenia.
+
+Elementem wykonawczym jest procesor 8-bitowy [ATtiny26][at].
 
  * [Schemat elektroniczny układu][schelec]
  * [Schemat połączeń][schconn]
 
 [lm]: <http://www.ti.com/product/LM35>
+[at]: <https://www.microchip.com/wwwproducts/en/ATTINY26>
 [schelec]: <elecrical-schematic.pdf>
 [schconn]: <connection-schematic.pdf>
